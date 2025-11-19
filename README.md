@@ -42,7 +42,9 @@ Key details:
 
 The CLI first attempts to use `Ticker.get_info()` (recommended by `yfinance`) and
 only falls back to the legacy `Ticker.info` property if necessary, which helps
-keep the exporter compatible across `yfinance` releases.
+keep the exporter compatible across `yfinance` releases. When the real pandas,
+requests, or yfinance packages are unavailable (e.g., in offline CI), the tool
+falls back to bundled lightweight shims so the pipeline and tests still run.
 
 ## Testing and verification
 
@@ -53,6 +55,10 @@ collection → Excel output) without real network calls:
 ```bash
 python -m unittest tests/test_pipeline.py
 ```
+
+The suite now includes explicit checks that the Alpha Vantage and FMP backup
+clients issue HTTP requests, ensuring the secondary/tertiary retrieval paths are
+wired correctly when you provide API keys.
 
 > These tests rely on the Python dependencies declared in `requirements.txt`.
 

@@ -4,9 +4,20 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-import pandas as pd
-import requests
-import yfinance as yf
+try:  # Prefer real pandas for production; fall back to lightweight stub for tests.
+    import pandas as pd  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - exercised in restricted envs
+    from stubs import pandas_stub as pd  # type: ignore
+
+try:  # Requests drives real HTTP calls for Alpha Vantage/FMP.
+    import requests  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    from stubs import requests_stub as requests  # type: ignore
+
+try:
+    import yfinance as yf  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    from stubs import yfinance_stub as yf  # type: ignore
 
 
 # Configure pandas display options to avoid SettingWithCopy warnings in logs

@@ -1,3 +1,11 @@
+try:  # pragma: no cover - shim path
+    from pandas import DataFrame  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    from . import pandas_stub as _pd  # type: ignore
+
+    DataFrame = _pd.DataFrame
+
+
 class Ticker:
     def __init__(self, symbol):
         self.ticker = symbol
@@ -9,9 +17,7 @@ class Ticker:
     cashflow = None
 
     def history(self, period="1d"):
-        from pandas import DataFrame
         return DataFrame()
 
     def get_shares_full(self):
-        from pandas import DataFrame
         return DataFrame()

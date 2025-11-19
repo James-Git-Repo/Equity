@@ -2,9 +2,12 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import pandas as pd
+try:
+    import pandas as pd  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    from stubs import pandas_stub as pd  # type: ignore
 
 import main
 
@@ -266,6 +269,46 @@ class PipelineTests(unittest.TestCase):
             result_df = pd.read_excel(output_path)
             self.assertEqual(list(result_df["Ticker"]), ["TEST"])
             self.assertEqual(float(result_df.iloc[0]["Price"]), 10.0)
+
+
+class ClientHttpTests(unittest.TestCase):
+    def test_alpha_vantage_client_executes_http_call(self):
+        mock_session = MagicMock()
+        response = MagicMock()
+        response.json.return_value = {
+            "Time Series (Daily)": {
+                "2024-03-01": {"4. close": "101.2"},
+                "2024-02-29": {"4. close": "100.0"},
+            }
+        }
+        response.raise_for_status.return_value = None
+        mock_session.get.return_value = response
+
+        with patch("main.requests.Session", return_value=mock_session):
+            client = main.AlphaVantageClient(api_key="demo")
+            price = client.get_price("MSFT")
+
+        self.assertEqual(price, 101.2)
+        mock_session.get.assert_called_once()
+        _, kwargs = mock_session.get.call_args
+        self.assertIn("function", kwargs["params"])
+        self.assertEqual(kwargs["params"]["function"], "TIME_SERIES_DAILY_ADJUSTED")
+
+    def test_fmp_client_executes_http_call(self):
+        mock_session = MagicMock()
+        response = MagicMock()
+        response.json.return_value = [{"wacc": "0.07"}]
+        response.raise_for_status.return_value = None
+        mock_session.get.return_value = response
+
+        with patch("main.requests.Session", return_value=mock_session):
+            client = main.FinancialModelingPrepClient(api_key="demo")
+            metrics = client.get_key_metrics("AAPL")
+
+        self.assertEqual(metrics["wacc"], "0.07")
+        mock_session.get.assert_called_once()
+        called_url = mock_session.get.call_args[0][0]
+        self.assertIn("financialmodelingprep.com", called_url)
 
 
 if __name__ == "__main__":
