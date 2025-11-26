@@ -1,0 +1,5 @@
+pandas
+yfinance>=0.2.38
+alpha_vantage
+requests
+openpyxl
